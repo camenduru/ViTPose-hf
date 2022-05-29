@@ -255,15 +255,18 @@ This is an unofficial demo for [https://github.com/ViTAE-Transformer/ViTPose](ht
                         detect_button = gr.Button(value='Detect')
                         det_preds = gr.Variable()
                 with gr.Column():
-                    detection_visualization = gr.Image(
-                        label='Detection Result', type='numpy')
-                    vis_det_score_threshold = gr.Slider(
-                        0,
-                        1,
-                        step=0.05,
-                        value=0.5,
-                        label='Visualization Score Threshold')
-                    redraw_det_button = gr.Button(value='Redraw')
+                    with gr.Row():
+                        detection_visualization = gr.Image(
+                            label='Detection Result', type='numpy')
+                    with gr.Row():
+                        vis_det_score_threshold = gr.Slider(
+                            0,
+                            1,
+                            step=0.05,
+                            value=0.5,
+                            label='Visualization Score Threshold')
+                    with gr.Row():
+                        redraw_det_button = gr.Button(value='Redraw')
 
             with gr.Row():
                 paths = sorted(pathlib.Path('images').rglob('*.jpg'))
@@ -290,24 +293,30 @@ This is an unofficial demo for [https://github.com/ViTAE-Transformer/ViTPose](ht
                         predict_button = gr.Button(value='Predict')
                         pose_preds = gr.Variable()
                 with gr.Column():
-                    pose_visualization = gr.Image(label='Result', type='numpy')
-                    vis_kpt_score_threshold = gr.Slider(
-                        0,
-                        1,
-                        step=0.05,
-                        value=0.3,
-                        label='Visualization Score Threshold')
-                    vis_dot_radius = gr.Slider(1,
-                                               10,
-                                               step=1,
-                                               value=4,
-                                               label='Dot Radius')
-                    vis_line_thickness = gr.Slider(1,
+                    with gr.Row():
+                        pose_visualization = gr.Image(label='Result',
+                                                      type='numpy')
+                    with gr.Row():
+                        vis_kpt_score_threshold = gr.Slider(
+                            0,
+                            1,
+                            step=0.05,
+                            value=0.3,
+                            label='Visualization Score Threshold')
+                    with gr.Row():
+                        vis_dot_radius = gr.Slider(1,
                                                    10,
                                                    step=1,
-                                                   value=2,
-                                                   label='Line Thickness')
-                    redraw_pose_button = gr.Button(value='Redraw')
+                                                   value=4,
+                                                   label='Dot Radius')
+                    with gr.Row():
+                        vis_line_thickness = gr.Slider(1,
+                                                       10,
+                                                       step=1,
+                                                       value=2,
+                                                       label='Line Thickness')
+                    with gr.Row():
+                        redraw_pose_button = gr.Button(value='Redraw')
 
         gr.Markdown(
             '<center><img src="https://visitor-badge.glitch.me/badge?page_id=hysts.vitpose" alt="visitor badge"/></center>'
