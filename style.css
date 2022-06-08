@@ -1,7 +1,11 @@
 h1 {
   text-align: center;
 }
-div#result {
+div#det-result {
+  max-width: 600px;
+  max-height: 600px;
+}
+div#pose-result {
   max-width: 600px;
   max-height: 600px;
 }

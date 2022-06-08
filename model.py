@@ -29,46 +29,52 @@ HF_TOKEN = os.environ['HF_TOKEN']
 
 
 class DetModel:
+    MODEL_DICT = {
+        'YOLOX-tiny': {
+            'config':
+            'mmdet_configs/configs/yolox/yolox_tiny_8x8_300e_coco.py',
+            'model':
+            'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_tiny_8x8_300e_coco/yolox_tiny_8x8_300e_coco_20211124_171234-b4047906.pth',
+        },
+        'YOLOX-s': {
+            'config':
+            'mmdet_configs/configs/yolox/yolox_s_8x8_300e_coco.py',
+            'model':
+            'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_s_8x8_300e_coco/yolox_s_8x8_300e_coco_20211121_095711-4592a793.pth',
+        },
+        'YOLOX-l': {
+            'config':
+            'mmdet_configs/configs/yolox/yolox_l_8x8_300e_coco.py',
+            'model':
+            'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_l_8x8_300e_coco/yolox_l_8x8_300e_coco_20211126_140236-d3bd2b23.pth',
+        },
+        'YOLOX-x': {
+            'config':
+            'mmdet_configs/configs/yolox/yolox_x_8x8_300e_coco.py',
+            'model':
+            'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_x_8x8_300e_coco/yolox_x_8x8_300e_coco_20211126_140254-1ef88d67.pth',
+        },
+    }
+
     def __init__(self, device: str | torch.device):
         self.device = torch.device(device)
-        self.models = self._load_models()
+        self._load_all_models_once()
         self.model_name = 'YOLOX-l'
+        self.model = self._load_model(self.model_name)
 
-    def _load_models(self) -> dict[str, nn.Module]:
-        model_dict = {
-            'YOLOX-tiny': {
-                'config':
-                'mmdet_configs/configs/yolox/yolox_tiny_8x8_300e_coco.py',
-                'model':
-                'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_tiny_8x8_300e_coco/yolox_tiny_8x8_300e_coco_20211124_171234-b4047906.pth',
-            },
-            'YOLOX-s': {
-                'config':
-                'mmdet_configs/configs/yolox/yolox_s_8x8_300e_coco.py',
-                'model':
-                'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_s_8x8_300e_coco/yolox_s_8x8_300e_coco_20211121_095711-4592a793.pth',
-            },
-            'YOLOX-l': {
-                'config':
-                'mmdet_configs/configs/yolox/yolox_l_8x8_300e_coco.py',
-                'model':
-                'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_l_8x8_300e_coco/yolox_l_8x8_300e_coco_20211126_140236-d3bd2b23.pth',
-            },
-            'YOLOX-x': {
-                'config':
-                'mmdet_configs/configs/yolox/yolox_x_8x8_300e_coco.py',
-                'model':
-                'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_x_8x8_300e_coco/yolox_x_8x8_300e_coco_20211126_140254-1ef88d67.pth',
-            },
-        }
-        models = {
-            key: init_detector(dic['config'], dic['model'], device=self.device)
-            for key, dic in model_dict.items()
-        }
-        return models
+    def _load_all_models_once(self) -> None:
+        for name in self.MODEL_DICT:
+            self._load_model(name)
 
-    def set_model_name(self, name: str) -> None:
+    def _load_model(self, name: str) -> nn.Module:
+        dic = self.MODEL_DICT[name]
+        return init_detector(dic['config'], dic['model'], device=self.device)
+
+    def set_model(self, name: str) -> None:
+        if name == self.model_name:
+            return
         self.model_name = name
+        self.model = self._load_model(name)
 
     def detect_and_visualize(
             self, image: np.ndarray,
@@ -79,8 +85,7 @@ class DetModel:
 
     def detect(self, image: np.ndarray) -> list[np.ndarray]:
         image = image[:, :, ::-1]  # RGB -> BGR
-        model = self.models[self.model_name]
-        out = inference_detector(model, image)
+        out = inference_detector(self.model, image)
         return out
 
     def visualize_detection_results(
@@ -88,60 +93,71 @@ class DetModel:
             image: np.ndarray,
             detection_results: list[np.ndarray],
             score_threshold: float = 0.3) -> np.ndarray:
-        person_det = [detection_results[0]] + [np.array([]).reshape(0, 5)]
+        person_det = [detection_results[0]] + [np.array([]).reshape(0, 5)] * 79
 
         image = image[:, :, ::-1]  # RGB -> BGR
-        model = self.models[self.model_name]
-        vis = model.show_result(image,
-                                person_det,
-                                score_thr=score_threshold,
-                                bbox_color=None,
-                                text_color=(200, 200, 200),
-                                mask_color=None)
+        vis = self.model.show_result(image,
+                                     person_det,
+                                     score_thr=score_threshold,
+                                     bbox_color=None,
+                                     text_color=(200, 200, 200),
+                                     mask_color=None)
         return vis[:, :, ::-1]  # BGR -> RGB
 
 
+class AppDetModel(DetModel):
+    def run(self, model_name: str, image: np.ndarray,
+            score_threshold: float) -> tuple[list[np.ndarray], np.ndarray]:
+        self.set_model(model_name)
+        return self.detect_and_visualize(image, score_threshold)
+
+
 class PoseModel:
+    MODEL_DICT = {
+        'ViTPose-B (single-task train)': {
+            'config':
+            'ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
+            'model': 'models/vitpose-b.pth',
+        },
+        'ViTPose-L (single-task train)': {
+            'config':
+            'ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
+            'model': 'models/vitpose-l.pth',
+        },
+        'ViTPose-B (multi-task train, COCO)': {
+            'config':
+            'ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
+            'model': 'models/vitpose-b-multi-coco.pth',
+        },
+        'ViTPose-L (multi-task train, COCO)': {
+            'config':
+            'ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
+            'model': 'models/vitpose-l-multi-coco.pth',
+        },
+    }
+
     def __init__(self, device: str | torch.device):
         self.device = torch.device(device)
-        self.models = self._load_models()
         self.model_name = 'ViTPose-B (multi-task train, COCO)'
+        self.model = self._load_model(self.model_name)
 
-    def _load_models(self) -> dict[str, nn.Module]:
-        model_dict = {
-            'ViTPose-B (single-task train)': {
-                'config':
-                'ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
-                'model': 'models/vitpose-b.pth',
-            },
-            'ViTPose-L (single-task train)': {
-                'config':
-                'ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
-                'model': 'models/vitpose-l.pth',
-            },
-            'ViTPose-B (multi-task train, COCO)': {
-                'config':
-                'ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
-                'model': 'models/vitpose-b-multi-coco.pth',
-            },
-            'ViTPose-L (multi-task train, COCO)': {
-                'config':
-                'ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
-                'model': 'models/vitpose-l-multi-coco.pth',
-            },
-        }
-        models = dict()
-        for key, dic in model_dict.items():
-            ckpt_path = huggingface_hub.hf_hub_download(
-                'hysts/ViTPose', dic['model'], use_auth_token=HF_TOKEN)
-            model = init_pose_model(dic['config'],
-                                    ckpt_path,
-                                    device=self.device)
-            models[key] = model
-        return models
+    def _load_all_models_once(self) -> None:
+        for name in self.MODEL_DICT:
+            self._load_model(name)
 
-    def set_model_name(self, name: str) -> None:
+    def _load_model(self, name: str) -> nn.Module:
+        dic = self.MODEL_DICT[name]
+        ckpt_path = huggingface_hub.hf_hub_download('hysts/ViTPose',
+                                                    dic['model'],
+                                                    use_auth_token=HF_TOKEN)
+        model = init_pose_model(dic['config'], ckpt_path, device=self.device)
+        return model
+
+    def set_model(self, name: str) -> None:
+        if name == self.model_name:
+            return
         self.model_name = name
+        self.model = self._load_model(name)
 
     def predict_pose_and_visualize(
         self,
@@ -163,9 +179,8 @@ class PoseModel:
             det_results: list[np.ndarray],
             box_score_threshold: float = 0.5) -> list[dict[str, np.ndarray]]:
         image = image[:, :, ::-1]  # RGB -> BGR
-        model = self.models[self.model_name]
         person_results = process_mmdet_results(det_results, 1)
-        out, _ = inference_top_down_pose_model(model,
+        out, _ = inference_top_down_pose_model(self.model,
                                                image,
                                                person_results=person_results,
                                                bbox_thr=box_score_threshold,
@@ -179,11 +194,25 @@ class PoseModel:
                                vis_dot_radius: int = 4,
                                vis_line_thickness: int = 1) -> np.ndarray:
         image = image[:, :, ::-1]  # RGB -> BGR
-        model = self.models[self.model_name]
-        vis = vis_pose_result(model,
+        vis = vis_pose_result(self.model,
                               image,
                               pose_results,
                               kpt_score_thr=kpt_score_threshold,
                               radius=vis_dot_radius,
                               thickness=vis_line_thickness)
         return vis[:, :, ::-1]  # BGR -> RGB
+
+
+class AppPoseModel(PoseModel):
+    def run(
+        self, model_name: str, image: np.ndarray,
+        det_results: list[np.ndarray], box_score_threshold: float,
+        kpt_score_threshold: float, vis_dot_radius: int,
+        vis_line_thickness: int
+    ) -> tuple[list[dict[str, np.ndarray]], np.ndarray]:
+        self.set_model(model_name)
+        return self.predict_pose_and_visualize(image, det_results,
+                                               box_score_threshold,
+                                               kpt_score_threshold,
+                                               vis_dot_radius,
+                                               vis_line_thickness)

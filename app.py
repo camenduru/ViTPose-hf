@@ -8,7 +8,7 @@ import tarfile
 
 import gradio as gr
 
-from model import DetModel, PoseModel
+from model import AppDetModel, AppPoseModel
 
 DESCRIPTION = '''# ViTPose
 
@@ -44,8 +44,8 @@ def main():
 
     extract_tar()
 
-    det_model = DetModel(device=args.device)
-    pose_model = PoseModel(device=args.device)
+    det_model = AppDetModel(device=args.device)
+    pose_model = AppPoseModel(device=args.device)
 
     with gr.Blocks(theme=args.theme, css='style.css') as demo:
         gr.Markdown(DESCRIPTION)
@@ -59,7 +59,7 @@ def main():
                                                type='numpy')
                     with gr.Row():
                         detector_name = gr.Dropdown(list(
-                            det_model.models.keys()),
+                            det_model.MODEL_DICT.keys()),
                                                     value=det_model.model_name,
                                                     label='Detector')
                     with gr.Row():
@@ -68,7 +68,9 @@ def main():
                 with gr.Column():
                     with gr.Row():
                         detection_visualization = gr.Image(
-                            label='Detection Result', type='numpy')
+                            label='Detection Result',
+                            type='numpy',
+                            elem_id='det-result')
                     with gr.Row():
                         vis_det_score_threshold = gr.Slider(
                             0,
@@ -91,7 +93,7 @@ def main():
                 with gr.Column():
                     with gr.Row():
                         pose_model_name = gr.Dropdown(
-                            list(pose_model.models.keys()),
+                            list(pose_model.MODEL_DICT.keys()),
                             value=pose_model.model_name,
                             label='Pose Model')
                     det_score_threshold = gr.Slider(
@@ -106,7 +108,8 @@ def main():
                 with gr.Column():
                     with gr.Row():
                         pose_visualization = gr.Image(label='Result',
-                                                      type='numpy')
+                                                      type='numpy',
+                                                      elem_id='pose-result')
                     with gr.Row():
                         vis_kpt_score_threshold = gr.Slider(
                             0,
@@ -131,11 +134,12 @@ def main():
 
         gr.Markdown(FOOTER)
 
-        detector_name.change(fn=det_model.set_model_name,
+        detector_name.change(fn=det_model.set_model,
                              inputs=detector_name,
                              outputs=None)
-        detect_button.click(fn=det_model.detect_and_visualize,
+        detect_button.click(fn=det_model.run,
                             inputs=[
+                                detector_name,
                                 input_image,
                                 vis_det_score_threshold,
                             ],
@@ -151,11 +155,12 @@ def main():
                                 ],
                                 outputs=detection_visualization)
 
-        pose_model_name.change(fn=pose_model.set_model_name,
+        pose_model_name.change(fn=pose_model.set_model,
                                inputs=pose_model_name,
                                outputs=None)
-        predict_button.click(fn=pose_model.predict_pose_and_visualize,
+        predict_button.click(fn=pose_model.run,
                              inputs=[
+                                 pose_model_name,
                                  input_image,
                                  det_preds,
                                  det_score_threshold,
