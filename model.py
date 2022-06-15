@@ -10,9 +10,9 @@ if os.getenv('SYSTEM') == 'spaces':
     mim.uninstall('mmcv-full', confirm_yes=True)
     mim.install('mmcv-full==1.5.0', is_yes=True)
 
-    subprocess.call('pip uninstall -y opencv-python'.split())
-    subprocess.call('pip uninstall -y opencv-python-headless'.split())
-    subprocess.call('pip install opencv-python-headless==4.5.5.64'.split())
+    subprocess.run('pip uninstall -y opencv-python'.split())
+    subprocess.run('pip uninstall -y opencv-python-headless'.split())
+    subprocess.run('pip install opencv-python-headless==4.5.5.64'.split())
 
 import huggingface_hub
 import numpy as np
