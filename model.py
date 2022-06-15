@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import pathlib
 import subprocess
 import sys
 
@@ -19,7 +20,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-sys.path.insert(0, 'ViTPose/')
+app_dir = pathlib.Path(__file__).parent
+submodule_dir = app_dir / 'ViTPose/'
+sys.path.insert(0, submodule_dir.as_posix())
 
 from mmdet.apis import inference_detector, init_detector
 from mmpose.apis import (inference_top_down_pose_model, init_pose_model,
