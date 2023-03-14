@@ -1,7 +1,7 @@
 mmcv-full==1.5.0
 mmdet==2.24.1
 mmpose==0.25.1
-numpy==1.22.4
+numpy==1.23.5
 opencv-python-headless==4.5.5.64
 openmim==0.1.5
 timm==0.5.4
