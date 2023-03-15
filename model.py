@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import shlex
 import subprocess
 import sys
 
@@ -11,9 +12,9 @@ if os.getenv('SYSTEM') == 'spaces':
     mim.uninstall('mmcv-full', confirm_yes=True)
     mim.install('mmcv-full==1.5.0', is_yes=True)
 
-    subprocess.run('pip uninstall -y opencv-python'.split())
-    subprocess.run('pip uninstall -y opencv-python-headless'.split())
-    subprocess.run('pip install opencv-python-headless==4.5.5.64'.split())
+    subprocess.run(shlex.split('pip uninstall -y opencv-python'))
+    subprocess.run(shlex.split('pip uninstall -y opencv-python-headless'))
+    subprocess.run(shlex.split('pip install opencv-python-headless==4.5.5.64'))
 
 import huggingface_hub
 import numpy as np
@@ -21,14 +22,14 @@ import torch
 import torch.nn as nn
 
 app_dir = pathlib.Path(__file__).parent
-submodule_dir = app_dir / 'ViTPose/'
+submodule_dir = app_dir / 'ViTPose'
 sys.path.insert(0, submodule_dir.as_posix())
 
 from mmdet.apis import inference_detector, init_detector
 from mmpose.apis import (inference_top_down_pose_model, init_pose_model,
                          process_mmdet_results, vis_pose_result)
 
-HF_TOKEN = os.environ['HF_TOKEN']
+HF_TOKEN = os.getenv('HF_TOKEN')
 
 
 class DetModel:
@@ -59,8 +60,9 @@ class DetModel:
         },
     }
 
-    def __init__(self, device: str | torch.device):
-        self.device = torch.device(device)
+    def __init__(self):
+        self.device = torch.device(
+            'cuda:0' if torch.cuda.is_available() else 'cpu')
         self._load_all_models_once()
         self.model_name = 'YOLOX-l'
         self.model = self._load_model(self.model_name)
@@ -139,8 +141,9 @@ class PoseModel:
         },
     }
 
-    def __init__(self, device: str | torch.device):
-        self.device = torch.device(device)
+    def __init__(self):
+        self.device = torch.device(
+            'cuda:0' if torch.cuda.is_available() else 'cpu')
         self.model_name = 'ViTPose-B (multi-task train, COCO)'
         self.model = self._load_model(self.model_name)
 
