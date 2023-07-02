@@ -14,7 +14,7 @@ if os.getenv('SYSTEM') == 'spaces':
 
     subprocess.run(shlex.split('pip uninstall -y opencv-python'))
     subprocess.run(shlex.split('pip uninstall -y opencv-python-headless'))
-    subprocess.run(shlex.split('pip install opencv-python-headless==4.5.5.64'))
+    subprocess.run(shlex.split('pip install opencv-python-headless==4.8.0.74'))
 
 import huggingface_hub
 import numpy as np
@@ -28,8 +28,6 @@ sys.path.insert(0, submodule_dir.as_posix())
 from mmdet.apis import inference_detector, init_detector
 from mmpose.apis import (inference_top_down_pose_model, init_pose_model,
                          process_mmdet_results, vis_pose_result)
-
-HF_TOKEN = os.getenv('HF_TOKEN')
 
 
 class DetModel:
@@ -72,8 +70,8 @@ class DetModel:
             self._load_model(name)
 
     def _load_model(self, name: str) -> nn.Module:
-        dic = self.MODEL_DICT[name]
-        return init_detector(dic['config'], dic['model'], device=self.device)
+        d = self.MODEL_DICT[name]
+        return init_detector(d['config'], d['model'], device=self.device)
 
     def set_model(self, name: str) -> None:
         if name == self.model_name:
@@ -152,11 +150,10 @@ class PoseModel:
             self._load_model(name)
 
     def _load_model(self, name: str) -> nn.Module:
-        dic = self.MODEL_DICT[name]
-        ckpt_path = huggingface_hub.hf_hub_download('hysts/ViTPose',
-                                                    dic['model'],
-                                                    use_auth_token=HF_TOKEN)
-        model = init_pose_model(dic['config'], ckpt_path, device=self.device)
+        d = self.MODEL_DICT[name]
+        ckpt_path = huggingface_hub.hf_hub_download('public-data/ViTPose',
+                                                    d['model'])
+        model = init_pose_model(d['config'], ckpt_path, device=self.device)
         return model
 
     def set_model(self, name: str) -> None:

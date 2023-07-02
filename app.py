@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import pathlib
 import tarfile
 
@@ -11,10 +10,6 @@ import gradio as gr
 from model import AppDetModel, AppPoseModel
 
 DESCRIPTION = '# [ViTPose](https://github.com/ViTAE-Transformer/ViTPose)'
-
-
-def set_example_image(example: list) -> dict:
-    return gr.Image.update(value=example[0])
 
 
 def extract_tar() -> None:
@@ -160,4 +155,4 @@ with gr.Blocks(css='style.css') as demo:
                              ],
                              outputs=pose_visualization)
 
-demo.queue(api_open=False).launch()
+demo.queue(max_size=10).launch()
